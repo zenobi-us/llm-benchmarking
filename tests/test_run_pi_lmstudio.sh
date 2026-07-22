@@ -61,11 +61,22 @@ no_args_output="$(PATH="$FAKE_BIN:$PATH" "$ROOT_DIR/run-pi-lmstudio.sh")"
 grep -Fx 'lmstudio/google/gemma-4-26b-a4b-qat' <<<"$output" >/dev/null
 grep -F 'models_json_path=' <<<"$output" >/dev/null
 grep -Fx 'lmstudio_base_url=http://127.0.0.1:1234/v1' <<<"$output" >/dev/null
+grep -Fx 'harbor_agents.job_index:JobIndexPlugin' <<<"$output" >/dev/null
+if grep -Fx -- '--plugin-kwarg' <<<"$output" >/dev/null; then
+	echo "Launcher must not reserve plugin kwargs from caller-supplied plugins" >&2
+	exit 1
+fi
 grep -Fx 'generated-model-config-ok' <<<"$output" >/dev/null
 grep -Fx 'host-network-overlay-ok' <<<"$output" >/dev/null
 grep -Fx -- '--extra-docker-compose' <<<"$output" >/dev/null
 grep -Fx './benchmarks/ssh-key-pair' <<<"$output" >/dev/null
 grep -Fx "$ROOT_DIR/benchmarks/ssh-key-pair" <<<"$no_args_output" >/dev/null
+
+if plugin_kwarg_error="$(PATH="$FAKE_BIN:$PATH" "$ROOT_DIR/run-pi-lmstudio.sh" --plugin custom.module:Plugin --plugin-kwarg key=value 2>&1)"; then
+	echo "Expected plugin kwargs to be rejected before Harbor runs" >&2
+	exit 1
+fi
+grep -F 'Plugin kwargs are unavailable in this launcher because Harbor 0.18 only permits them with one plugin' <<<"$plugin_kwarg_error" >/dev/null
 
 if connection_error="$(CURL_FAILURE=1 PATH="$FAKE_BIN:$PATH" "$ROOT_DIR/run-pi-lmstudio.sh" 2>&1)"; then
 	echo "Expected unavailable LM Studio check to fail" >&2

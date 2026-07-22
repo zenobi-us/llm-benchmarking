@@ -11,6 +11,15 @@ for command in curl fzf jq; do
 	fi
 done
 
+for argument in "$@"; do
+	case "$argument" in
+	--pk | --pk=* | --plugin-kwarg | --plugin-kwarg=*)
+		echo "Plugin kwargs are unavailable in this launcher because Harbor 0.18 only permits them with one plugin, and the job index plugin is always enabled." >&2
+		exit 2
+		;;
+	esac
+done
+
 lmstudio_base_url="http://127.0.0.1:1234/v1"
 if ! lmstudio_models="$(curl -fsS --max-time 3 "$lmstudio_base_url/models")"; then
 	echo "Cannot reach LM Studio at $lmstudio_base_url. Start the LM Studio local server, then retry." >&2
@@ -71,7 +80,7 @@ harbor run \
 	--extra-docker-compose "$host_network_compose" \
 	--agent harbor_agents.pi_lmstudio:PiLmStudio \
 	--model "lmstudio/$model_id" \
+	--plugin harbor_agents.job_index:JobIndexPlugin \
 	--agent-kwarg "models_json_path=$models_json_path" \
 	--agent-kwarg "lmstudio_base_url=$lmstudio_base_url" \
-	--agent-kwarg "jobs_jsonl_path=$ROOT_DIR/jobs.jsonl" \
 	"${harbor_args[@]}"

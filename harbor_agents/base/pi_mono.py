@@ -167,8 +167,8 @@ class PiMonoAgentBase(Pi):
                 env=self.provider_runtime_environment(),
             )
         finally:
-            # Export before AgentBase updates jobs.jsonl. The index can then
-            # truthfully report whether the HTML session artifact exists.
+            # Preserve the transcript even when Pi fails; job indexing happens
+            # later, after Harbor finishes every trial.
             await self._export_session(
                 environment,
                 session_path,

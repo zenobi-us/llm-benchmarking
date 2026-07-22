@@ -1,10 +1,9 @@
-import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock
 
-from harbor_agents.base import AgentBase, LmStudioAgentProvider
+from harbor_agents.base import LmStudioAgentProvider
 from harbor_agents.pi_lmstudio import PiLmStudio
 
 
@@ -36,19 +35,6 @@ class LmStudioRecordingAgent(LmStudioAgentProvider, RecordingHarness):
     pass
 
 
-class FailingHarness:
-    def __init__(self, *args, logs_dir: Path, model_name: str, **kwargs) -> None:
-        self.logs_dir = logs_dir
-        self.model_name = model_name
-
-    async def run(self, instruction, environment, context) -> None:
-        raise RuntimeError("harness failed")
-
-
-class IndexedFailingAgent(AgentBase, FailingHarness):
-    pass
-
-
 class AgentCompositionTest(unittest.IsolatedAsyncioTestCase):
     async def test_lmstudio_provider_can_configure_a_non_pi_harness(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -72,37 +58,15 @@ class AgentCompositionTest(unittest.IsolatedAsyncioTestCase):
                 "openai-completions",
             )
 
-    async def test_agent_base_indexes_failed_harness_runs(self) -> None:
+    async def test_prompt_failure_still_exports_session(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             agent_dir = root / "jobs" / "job-1" / "task__abc" / "agent"
             agent_dir.mkdir(parents=True)
-            index_path = root / "jobs.jsonl"
-            agent = IndexedFailingAgent(
-                logs_dir=agent_dir,
-                model_name="provider/model",
-                jobs_jsonl_path=index_path,
-            )
-
-            with self.assertRaisesRegex(RuntimeError, "harness failed"):
-                await agent.run("instruction", object(), object())
-
-            record = json.loads(index_path.read_text())
-            self.assertEqual(record["id"], "job-1/task__abc")
-            self.assertEqual(record["model"], "provider/model")
-            self.assertNotIn("sessionPath", record)
-
-    async def test_prompt_failure_still_exports_and_indexes_session(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            agent_dir = root / "jobs" / "job-1" / "task__abc" / "agent"
-            agent_dir.mkdir(parents=True)
-            index_path = root / "jobs.jsonl"
             agent = PiLmStudio(
                 logs_dir=agent_dir,
                 model_name="lmstudio/test-model",
                 lmstudio_base_url="http://127.0.0.1:1234/v1",
-                jobs_jsonl_path=index_path,
                 prompt_template_path=root / "missing-template.md",
             )
             execute = AsyncMock(return_value=None)
@@ -114,23 +78,18 @@ class AgentCompositionTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(execute.await_count, 2)
             self.assertIn("rm -f", execute.await_args_list[0].kwargs["command"])
             self.assertIn("pi --export", execute.await_args_list[1].kwargs["command"])
-            self.assertTrue(index_path.is_file())
 
-    async def test_pi_failure_still_exports_and_indexes_session(self) -> None:
+    async def test_pi_failure_still_exports_session(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             agent_dir = root / "jobs" / "job-1" / "task__abc" / "agent"
             agent_dir.mkdir(parents=True)
-            index_path = root / "jobs.jsonl"
             agent = PiLmStudio(
                 logs_dir=agent_dir,
                 model_name="lmstudio/test-model",
                 lmstudio_base_url="http://127.0.0.1:1234/v1",
-                jobs_jsonl_path=index_path,
             )
-            execute = AsyncMock(
-                side_effect=[None, RuntimeError("Pi failed"), None]
-            )
+            execute = AsyncMock(side_effect=[None, RuntimeError("Pi failed"), None])
             agent.exec_as_agent = execute
 
             with self.assertRaisesRegex(RuntimeError, "Pi failed"):
@@ -143,15 +102,8 @@ class AgentCompositionTest(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("--no-session", run_command)
             self.assertIn("pi --export", export_command)
 
-            record = json.loads(index_path.read_text())
-            self.assertEqual(
-                record["sessionPath"],
-                "jobs/job-1/task__abc/agent/session.html",
-            )
-
-    def test_pi_lmstudio_mro_keeps_lifecycle_provider_harness_order(self) -> None:
+    def test_pi_lmstudio_mro_keeps_provider_harness_order(self) -> None:
         names = [base.__name__ for base in PiLmStudio.__mro__]
-        self.assertLess(names.index("AgentBase"), names.index("LmStudioAgentProvider"))
         self.assertLess(
             names.index("LmStudioAgentProvider"),
             names.index("AgentProviderBase"),

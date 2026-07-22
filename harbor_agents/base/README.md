@@ -1,11 +1,14 @@
 # Composable Harbor agents
 
-These modules separate three reasons an agent changes:
+These modules separate two reasons an agent changes:
 
-1. `AgentBase` owns project-wide lifecycle behavior, currently `jobs.jsonl` updates.
-2. `AgentProviderBase` and provider mixins describe how to reach a model source.
-3. Harness bases such as `PiMonoAgentBase` translate provider declarations into
+1. `AgentProviderBase` and provider mixins describe how to reach a model source.
+2. Harness bases such as `PiMonoAgentBase` translate provider declarations into
    harness configuration, run the harness, and export harness-specific evidence.
+
+Job-wide lifecycle behavior does not belong in an agent mixin. The separate
+`harbor_agents.job_index:JobIndexPlugin` updates `jobs.jsonl` only after Harbor
+has finished every trial and written the aggregate job result.
 
 The provider layer must not write Pi or OpenCode configuration directly. A provider
 returns an `AgentProviderSpec`; the harness decides how to consume it. This boundary
@@ -22,23 +25,26 @@ Harbor setup
      -> harness.configure_model_provider(provider_spec)
 
 Harbor run
-  -> AgentBase.run
-     -> harness.run
-        -> execute harness
-        -> export session in finally
-     -> append jobs.jsonl in finally
+  -> harness.run
+     -> execute harness
+     -> export session in finally
+
+Harbor job completion
+  -> write aggregate result.json
+  -> JobIndexPlugin.on_job_end
+     -> append one jobs.jsonl record
 ```
 
 For `PiLmStudio`, the required order is:
 
 ```python
-class PiLmStudio(AgentBase, LmStudioAgentProvider, PiMonoAgentBase):
+class PiLmStudio(LmStudioAgentProvider, PiMonoAgentBase):
     ...
 ```
 
-Do not reorder these bases casually. `AgentBase` must wrap the entire run, the
-provider must sit before the harness so its cooperative `install()` can pass the
-provider spec forward, and only the harness should render the prompt template.
+Do not reorder these bases casually. The provider must sit before the harness so
+its cooperative `install()` can pass the provider spec forward, and only the
+harness should render the prompt template.
 Decorating another `run()` layer would render prompt templates twice.
 
 ## Adding a provider

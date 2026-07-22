@@ -1,19 +1,19 @@
 # Harbor Pi agent using LM Studio
 
-This project-local Harbor agent composes reusable lifecycle, provider, and harness bases. During agent setup the Pi harness installs Pi, then translates the harness-neutral LM Studio provider declaration into `$HOME/.pi/agent/models.json` inside the task container.
+This project-local Harbor integration composes reusable provider and harness bases. During agent setup the Pi harness installs Pi, then translates the harness-neutral LM Studio provider declaration into `$HOME/.pi/agent/models.json` inside the task container.
 
 ## Extension architecture
 
 `harbor_agents.pi_lmstudio:PiLmStudio` remains the stable Harbor import path, but its implementation is deliberately small:
 
 ```python
-class PiLmStudio(AgentBase, LmStudioAgentProvider, PiMonoAgentBase):
+class PiLmStudio(LmStudioAgentProvider, PiMonoAgentBase):
     ...
 ```
 
-- `AgentBase` appends `jobs.jsonl` after every run, including failures.
 - `LmStudioAgentProvider` declares connection details without knowing Pi's config format.
 - `PiMonoAgentBase` installs and runs Pi, translates provider declarations, and exports session HTML.
+- `JobIndexPlugin` appends one `jobs.jsonl` record after Harbor writes the aggregate job result.
 
 The base order is part of the lifecycle contract. See [`harbor_agents/base/README.md`](harbor_agents/base/README.md) before adding a provider, harness, or concrete combination.
 
@@ -36,6 +36,10 @@ The wrapper requires `curl`, `fzf`, and `jq`. It queries LM Studio, opens an `fz
 ```
 
 With no Harbor arguments, the launcher uses `benchmarks/ssh-key-pair`.
+
+The launcher always registers `JobIndexPlugin`. Harbor 0.18 only accepts plugin
+kwargs when exactly one plugin is registered, so this wrapper rejects `--plugin-kwarg`
+and `--pk`; use `harbor run` directly when another plugin requires kwargs.
 
 For a registry dataset:
 
@@ -67,6 +71,7 @@ By default, the agent derives the custom-provider model ID from Harbor's `--mode
 harbor run \
   -a harbor_agents.pi_lmstudio:PiLmStudio \
   -m lmstudio/google/gemma-4-26b-a4b-qat \
+  --plugin harbor_agents.job_index:JobIndexPlugin \
   --allow-agent-host <host-ip> \
   --agent-kwarg models_json_path=/path/to/models.json \
   --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
@@ -81,6 +86,7 @@ Harbor passes generated-config endpoint or API-key overrides with `--agent-kwarg
 harbor run \
   -a harbor_agents.pi_lmstudio:PiLmStudio \
   -m lmstudio/google/gemma-4-26b-a4b-qat \
+  --plugin harbor_agents.job_index:JobIndexPlugin \
   --allow-agent-host <host-ip> \
   --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
   -p ./benchmarks/ssh-key-pair
