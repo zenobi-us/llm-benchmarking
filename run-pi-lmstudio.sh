@@ -6,14 +6,14 @@ export PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 for command in curl fzf jq; do
 	if ! command -v "$command" >/dev/null; then
-		echo "Required command not found: $command" >&2
+		echo "Missing required command: $command. Install it, then rerun this command." >&2
 		exit 127
 	fi
 done
 
 lmstudio_base_url="http://127.0.0.1:1234/v1"
 if ! lmstudio_models="$(curl -fsS --max-time 3 "$lmstudio_base_url/models")"; then
-	echo "LM Studio API is not reachable at $lmstudio_base_url" >&2
+	echo "Cannot reach LM Studio at $lmstudio_base_url. Start the LM Studio local server, then retry." >&2
 	exit 1
 fi
 
@@ -24,7 +24,7 @@ if ! model_ids="$(jq -er '
 	| unique
 	| if length > 0 then .[] else error("no models") end
 ' <<<"$lmstudio_models" 2>/dev/null)"; then
-	echo "LM Studio returned no available models at $lmstudio_base_url/models" >&2
+	echo "LM Studio has no available models. Add or load a model, then retry." >&2
 	exit 1
 fi
 
@@ -37,6 +37,11 @@ runtime_dir="$(mktemp -d "${TMPDIR:-/tmp}/pi-lmstudio.XXXXXX")"
 trap 'rm -rf "$runtime_dir"' EXIT
 models_json_path="$runtime_dir/models.json"
 host_network_compose="$runtime_dir/host-network.yaml"
+
+harbor_args=("$@")
+if (( ${#harbor_args[@]} == 0 )); then
+	harbor_args=(-p "$ROOT_DIR/benchmarks/ssh-key-pair")
+fi
 
 jq -n \
 	--arg base_url "$lmstudio_base_url" \
@@ -69,4 +74,4 @@ harbor run \
 	--agent-kwarg "models_json_path=$models_json_path" \
 	--agent-kwarg "lmstudio_base_url=$lmstudio_base_url" \
 	--agent-kwarg "jobs_jsonl_path=$ROOT_DIR/jobs.jsonl" \
-	"$@"
+	"${harbor_args[@]}"
