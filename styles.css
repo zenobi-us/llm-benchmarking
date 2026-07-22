@@ -254,6 +254,11 @@ main { padding-block: 32px 72px; }
   font-variant-numeric: tabular-nums;
 }
 
+.score.missing strong {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
 .actions {
   display: flex;
   flex-direction: column;

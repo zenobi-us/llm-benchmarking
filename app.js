@@ -9,6 +9,7 @@ const elements = {
 };
 
 let runs = [];
+let runCache = new Map();
 let invalidLineCount = 0;
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -19,6 +20,13 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 const numberFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 3,
 });
+
+const statusLabels = {
+  completed: "Result ready",
+  pending: "Result pending",
+  error: "Run failed",
+  unavailable: "Result unavailable",
+};
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -63,8 +71,8 @@ async function loadResult(record) {
         result: null,
         resultState: pending ? "pending" : "unavailable",
         resultMessage: pending
-          ? "Final result is still being written."
-          : "Final result file was not found.",
+          ? "Result pending. The page will load it when updated run data is published."
+          : "No result was published for this run.",
       };
     }
     if (!response.ok) {
@@ -72,7 +80,7 @@ async function loadResult(record) {
         ...record,
         result: null,
         resultState: "unavailable",
-        resultMessage: `Result file could not be loaded (${response.status}).`,
+        resultMessage: `Result unavailable (HTTP ${response.status}).`,
       };
     }
     try {
@@ -82,7 +90,7 @@ async function loadResult(record) {
         ...record,
         result: null,
         resultState: "unavailable",
-        resultMessage: "Result file is not valid JSON.",
+        resultMessage: "Published result data is invalid.",
       };
     }
   } catch {
@@ -90,7 +98,7 @@ async function loadResult(record) {
       ...record,
       result: null,
       resultState: "unavailable",
-      resultMessage: "Result file could not be reached.",
+      resultMessage: "Result data could not be loaded. The page will retry when updated run data is published.",
     };
   }
 }
@@ -125,9 +133,9 @@ function titleOf(value) {
 
 function dateOf(run) {
   const value = run.result?.finished_at || run.result?.started_at || run.recordedAt;
-  if (!value) return "Date unavailable";
+  if (!value) return "Unavailable";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Date unavailable" : dateFormatter.format(date);
+  return Number.isNaN(date.getTime()) ? "Unavailable" : dateFormatter.format(date);
 }
 
 function showState(title, message, action) {
@@ -163,32 +171,39 @@ function runRow(run) {
   const description = element("div");
   const heading = element("div", "run-heading");
   heading.append(
-    element("span", `status ${status}`, status),
+    element("span", `status ${status}`, statusLabels[status] || "Result unavailable"),
     element("h2", "", titleOf(taskOf(run))),
   );
 
   const meta = element("p", "meta");
   meta.append(
-    element("span", "", modelOf(run)),
-    element("span", "", dateOf(run)),
-    element("span", "", run.job || "Job unavailable"),
+    element("span", "", `Model: ${modelOf(run)}`),
+    element("span", "", `Date: ${dateOf(run)}`),
+    element("span", "", `Run ID: ${run.id || "Unavailable"}`),
   );
   description.append(heading, meta);
 
-  const scoreBlock = element("div", "score");
+  const scoreBlock = element("div", score === null ? "score missing" : "score");
   scoreBlock.append(
-    element("span", "", "Score"),
-    element("strong", "", score === null ? "—" : numberFormatter.format(score)),
+    element("span", "", "Task score"),
+    element("strong", "", score === null ? "Not reported" : numberFormatter.format(score)),
   );
 
+  const transcriptAvailable = Boolean(run.sessionPath) && run.sessionAvailable !== false;
+  const resultAvailable = Boolean(run.result);
   const actions = element("div", "actions");
   actions.append(
     link(
-      "View transcript",
+      transcriptAvailable ? "View transcript" : "Transcript unavailable",
       run.sessionPath,
-      Boolean(run.sessionPath) && run.sessionAvailable !== false,
+      transcriptAvailable,
     ),
-    link("Raw result", run.resultPath, Boolean(run.result), true),
+    link(
+      resultAvailable ? "View result JSON" : "Result JSON unavailable",
+      run.resultPath,
+      resultAvailable,
+      true,
+    ),
   );
 
   article.append(description, scoreBlock, actions);
@@ -199,7 +214,7 @@ function runRow(run) {
 function render() {
   const query = elements.search.value.trim().toLowerCase();
   const visible = runs.filter(run =>
-    !query || [taskOf(run), modelOf(run), run.job, run.trial]
+    !query || [taskOf(run), modelOf(run), run.id]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
@@ -218,7 +233,7 @@ function render() {
   }
 
   if (runs.length) {
-    showState("No matching runs", "Try another task, model, or job.", {
+    showState("No matching runs", "Try another task, model, or run ID.", {
       label: "Clear search",
       run: () => {
         elements.search.value = "";
@@ -228,12 +243,23 @@ function render() {
     });
   } else if (invalidLineCount) {
     showState(
-      "Run index is unreadable",
-      "Ask the site owner to regenerate jobs.jsonl.",
+      "Published run data is invalid",
+      "Site owner: rebuild the report index.",
     );
   } else {
     showState("No runs published", "New runs appear here after a benchmark finishes.");
   }
+}
+
+async function loadIndexedRun(record) {
+  const signature = JSON.stringify(record);
+  const cached = runCache.get(record.id);
+  if (cached?.signature === signature) return cached;
+
+  return {
+    signature,
+    run: await loadResult(record),
+  };
 }
 
 async function loadRuns(showLoading = true) {
@@ -246,7 +272,11 @@ async function loadRuns(showLoading = true) {
     const response = await fetch(`${INDEX_URL}?t=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) throw new Error("Index unavailable");
     const records = parseIndex(await response.text());
-    runs = await Promise.all(records.map(loadResult));
+    const loadedRuns = await Promise.all(records.map(loadIndexedRun));
+    runCache = new Map(
+      loadedRuns.map(entry => [entry.run.id, entry]),
+    );
+    runs = loadedRuns.map(entry => entry.run);
     runs.sort((left, right) => {
       const leftDate = left.result?.finished_at || left.recordedAt || "";
       const rightDate = right.result?.finished_at || right.recordedAt || "";
@@ -254,7 +284,7 @@ async function loadRuns(showLoading = true) {
     });
     elements.warning.hidden = invalidLineCount === 0;
     elements.warning.textContent = invalidLineCount
-      ? `${invalidLineCount} unreadable ${invalidLineCount === 1 ? "entry was" : "entries were"} skipped.`
+      ? `${invalidLineCount} ${invalidLineCount === 1 ? "run could" : "runs could"} not be shown because ${invalidLineCount === 1 ? "its index entry is" : "their index entries are"} invalid.`
       : "";
     render();
   } catch {
@@ -265,8 +295,8 @@ async function loadRuns(showLoading = true) {
     }
     elements.count.textContent = "0 runs";
     const message = location.protocol === "file:"
-      ? "Run `python -m http.server`, then open the address it prints."
-      : "Ask the site owner to check jobs.jsonl.";
+      ? "This page must be served over HTTP. From the repository root, run python -m http.server and open the address shown."
+      : "Site owner: check the published report index.";
     showState("Could not load runs", message, {
       label: "Try again",
       run: () => loadRuns(),
@@ -277,4 +307,4 @@ async function loadRuns(showLoading = true) {
 elements.search.addEventListener("input", render);
 
 loadRuns();
-setInterval(() => loadRuns(false), 30_000);
+setInterval(() => loadRuns(false), 300_000);
