@@ -68,4 +68,5 @@ harbor run \
 	--model "lmstudio/$model_id" \
 	--agent-kwarg "models_json_path=$models_json_path" \
 	--agent-kwarg "lmstudio_base_url=$lmstudio_base_url" \
+	--agent-kwarg "jobs_jsonl_path=$ROOT_DIR/jobs.jsonl" \
 	"$@"

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Public reports for Harbor benchmarks run through Pi and LM Studio."
+    />
+    <title>LM Studio benchmark runs</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#runs">Skip to runs</a>
+
+    <header class="page-header shell">
+      <p class="kicker">LM Studio benchmark archive</p>
+      <h1>Benchmark runs</h1>
+      <p class="intro">See what ran, its score, and the evidence behind it.</p>
+
+      <details class="help">
+        <summary>How to read a run</summary>
+        <p>
+          Status shows whether the result is ready. Score shows the verifier outcome.
+          Open the transcript to inspect what the model did.
+        </p>
+      </details>
+    </header>
+
+    <main class="shell" id="runs">
+      <div class="toolbar">
+        <label class="search">
+          <span>Search runs</span>
+          <input
+            id="search"
+            type="search"
+            placeholder="Task, model, or job"
+            autocomplete="off"
+          />
+        </label>
+        <p class="run-count" id="run-count" aria-live="polite">Loading…</p>
+      </div>
+
+      <div class="data-warning" id="data-warning" role="status" hidden></div>
+      <div class="state" id="state" role="status" aria-live="polite">
+        Loading runs…
+      </div>
+      <div class="run-list" id="run-list"></div>
+    </main>
+  </body>
+</html>

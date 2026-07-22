@@ -120,17 +120,15 @@ jobs/<job>/
 
 `result.json` contains aggregate job status and evaluation results. Trial directories contain agent output, verifier output, and Pi session exports. Session export is best-effort; inspect `session-export.txt` when `session.html` is missing.
 
-## View Pi sessions
+## View benchmark reports
 
-The optional viewer scans `jobs/**/agent/session.html` and updates when new exports appear.
+The static viewer reads `jobs.jsonl`, then loads each indexed trial result and Pi session directly from `jobs/`. `PiLmStudio` appends an index record after every agent run.
 
 ```bash
-cd session-viewer
-bun install
-bun run dev
+python -m http.server
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:8000>. No build step or application server is required. Opening `index.html` through `file://` will not work because browsers block local `fetch()` calls.
 
 ## Troubleshooting
 
@@ -163,7 +161,10 @@ harbor_agents/pi_lmstudio.py  Custom Harbor Pi agent
 HARBOR_PI_LMSTUDIO.md       Agent configuration details
 tests/ssh-key-pair/         Local end-to-end benchmark task
 tests/                      Launcher and agent tests
-session-viewer/             Browser viewer for exported sessions
+index.html                  Static benchmark report viewer
+app.js                      Viewer behavior and onboarding states
+styles.css                  Viewer presentation
+jobs.jsonl                  Append-only trial index for the viewer
 jobs/                       Generated benchmark runs
 ```
 

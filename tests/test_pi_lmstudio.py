@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -63,6 +64,34 @@ class PiLmStudioModelsConfigTest(unittest.IsolatedAsyncioTestCase):
                     model_name="lmstudio/test-model",
                     models_json_path=config,
                 )
+
+    def test_records_job_for_static_viewer(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            agent_dir = root / "jobs" / "job-1" / "task__abc" / "agent"
+            agent_dir.mkdir(parents=True)
+            (agent_dir.parent / "config.json").write_text(
+                '{"task":{"path":"tests/example"}}'
+            )
+            index_path = root / "jobs.jsonl"
+            agent = PiLmStudio(
+                logs_dir=agent_dir,
+                model_name="lmstudio/test-model",
+                lmstudio_base_url="http://127.0.0.1:1234/v1",
+                jobs_jsonl_path=index_path,
+            )
+
+            agent._record_job_session()
+
+            record = json.loads(index_path.read_text())
+            self.assertEqual(record["id"], "job-1/task__abc")
+            self.assertEqual(record["task"], "tests/example")
+            self.assertEqual(record["model"], "lmstudio/test-model")
+            self.assertEqual(
+                record["sessionPath"], "jobs/job-1/task__abc/agent/session.html"
+            )
+            self.assertFalse(record["sessionAvailable"])
+            self.assertEqual(record["resultPath"], "jobs/job-1/task__abc/result.json")
 
 
 if __name__ == "__main__":
