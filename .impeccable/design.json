@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-22T22:59:22+09:30",
+  "title": "Design System: LLM Benchmark Archive",
+  "extensions": {
+    "colorMeta": {
+      "carbon-field": {
+        "role": "neutral",
+        "displayName": "Carbon Field",
+        "canonical": "#0a0d0e",
+        "tonalRamp": ["oklch(15% 0.006 190)", "oklch(25% 0.006 190)", "oklch(35% 0.006 190)", "oklch(45% 0.006 190)", "oklch(58% 0.006 190)", "oklch(70% 0.006 190)", "oklch(83% 0.006 190)", "oklch(95% 0.006 190)"]
+      },
+      "evidence-surface": {
+        "role": "neutral",
+        "displayName": "Evidence Surface",
+        "canonical": "#121718",
+        "tonalRamp": ["oklch(15% 0.01 190)", "oklch(25% 0.01 190)", "oklch(35% 0.01 190)", "oklch(45% 0.01 190)", "oklch(58% 0.01 190)", "oklch(70% 0.01 190)", "oklch(83% 0.01 190)", "oklch(95% 0.01 190)"]
+      },
+      "evidence-surface-strong": {
+        "role": "neutral",
+        "displayName": "Evidence Surface Strong",
+        "canonical": "#192021",
+        "tonalRamp": ["oklch(15% 0.012 190)", "oklch(25% 0.012 190)", "oklch(35% 0.012 190)", "oklch(45% 0.012 190)", "oklch(58% 0.012 190)", "oklch(70% 0.012 190)", "oklch(83% 0.012 190)", "oklch(95% 0.012 190)"]
+      },
+      "rule-line": {
+        "role": "neutral",
+        "displayName": "Rule Line",
+        "canonical": "#303a3b",
+        "tonalRamp": ["oklch(15% 0.012 190)", "oklch(25% 0.012 190)", "oklch(35% 0.012 190)", "oklch(45% 0.012 190)", "oklch(58% 0.012 190)", "oklch(70% 0.012 190)", "oklch(83% 0.012 190)", "oklch(95% 0.012 190)"]
+      },
+      "evidence-paper": {
+        "role": "neutral",
+        "displayName": "Evidence Paper",
+        "canonical": "#f0eee7",
+        "tonalRamp": ["oklch(15% 0.01 85)", "oklch(25% 0.01 85)", "oklch(35% 0.01 85)", "oklch(45% 0.01 85)", "oklch(58% 0.01 85)", "oklch(70% 0.01 85)", "oklch(83% 0.01 85)", "oklch(95% 0.01 85)"]
+      },
+      "secondary-evidence": {
+        "role": "neutral",
+        "displayName": "Secondary Evidence",
+        "canonical": "#aeb7b5",
+        "tonalRamp": ["oklch(15% 0.012 180)", "oklch(25% 0.012 180)", "oklch(35% 0.012 180)", "oklch(45% 0.012 180)", "oklch(58% 0.012 180)", "oklch(70% 0.012 180)", "oklch(83% 0.012 180)", "oklch(95% 0.012 180)"]
+      },
+      "signal-amber": {
+        "role": "primary",
+        "displayName": "Signal Amber",
+        "canonical": "#e2b85b",
+        "tonalRamp": ["oklch(15% 0.08 85)", "oklch(25% 0.10 85)", "oklch(35% 0.12 85)", "oklch(45% 0.14 85)", "oklch(58% 0.15 85)", "oklch(70% 0.13 85)", "oklch(83% 0.08 85)", "oklch(95% 0.03 85)"]
+      },
+      "verified-green": {
+        "role": "secondary",
+        "displayName": "Verified Green",
+        "canonical": "#7fd0a1",
+        "tonalRamp": ["oklch(15% 0.07 150)", "oklch(25% 0.09 150)", "oklch(35% 0.11 150)", "oklch(45% 0.13 150)", "oklch(58% 0.14 150)", "oklch(70% 0.12 150)", "oklch(83% 0.07 150)", "oklch(95% 0.025 150)"]
+      },
+      "pending-blue": {
+        "role": "secondary",
+        "displayName": "Pending Blue",
+        "canonical": "#89bde2",
+        "tonalRamp": ["oklch(15% 0.06 240)", "oklch(25% 0.08 240)", "oklch(35% 0.10 240)", "oklch(45% 0.12 240)", "oklch(58% 0.13 240)", "oklch(70% 0.11 240)", "oklch(83% 0.07 240)", "oklch(95% 0.025 240)"]
+      },
+      "failure-red": {
+        "role": "secondary",
+        "displayName": "Failure Red",
+        "canonical": "#ef9994",
+        "tonalRamp": ["oklch(15% 0.08 25)", "oklch(25% 0.10 25)", "oklch(35% 0.12 25)", "oklch(45% 0.14 25)", "oklch(58% 0.15 25)", "oklch(70% 0.12 25)", "oklch(83% 0.07 25)", "oklch(95% 0.025 25)"]
+      },
+      "unavailable-rose": {
+        "role": "secondary",
+        "displayName": "Unavailable Rose",
+        "canonical": "#c8aaaa",
+        "tonalRamp": ["oklch(15% 0.025 20)", "oklch(25% 0.035 20)", "oklch(35% 0.045 20)", "oklch(45% 0.055 20)", "oklch(58% 0.06 20)", "oklch(70% 0.05 20)", "oklch(83% 0.03 20)", "oklch(95% 0.012 20)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Ledger Display", "purpose": "Page identity and singular editorial emphasis." },
+      "title": { "displayName": "Report Title", "purpose": "Job and task identifiers." },
+      "body": { "displayName": "Evidence Body", "purpose": "Readable explanations and supporting prose." },
+      "label": { "displayName": "Evidence Label", "purpose": "Statuses, terms, and compact controls." },
+      "data": { "displayName": "Measured Data", "purpose": "Identifiers, dates, paths, counts, and values." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "orientation-rise", "value": "700ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "One brief page-entry orientation moment." },
+      { "name": "evidence-pulse", "value": "900ms cubic-bezier(0.65, 0, 0.35, 1) alternate", "purpose": "Loading evidence placeholders only." },
+      { "name": "disclosure", "value": "200ms ease-out", "purpose": "Native disclosure and external-link feedback." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "secondary-button",
+      "description": "Square recovery or secondary action with an explicit amber focus state.",
+      "html": "<button class=\"ds-secondary-button\">TRY AGAIN</button>",
+      "css": ".ds-secondary-button { background: var(--color-surface, #121718); color: var(--color-paper, #f0eee7); border: 1px solid var(--color-line, #303a3b); border-radius: 0; padding: 10px 16px; font: 600 16px/1.5 'IBM Plex Sans', sans-serif; cursor: pointer; transition: color 160ms ease-out, border-color 160ms ease-out; } .ds-secondary-button:hover { color: var(--color-accent, #e2b85b); border-color: var(--color-accent, #e2b85b); } .ds-secondary-button:focus-visible { outline: 2px solid var(--color-accent, #e2b85b); outline-offset: 4px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Unboxed search control anchored by a strong bottom rule.",
+      "html": "<label class=\"ds-search\"><span>Search jobs</span><input placeholder=\"Task, model, or job ID\"></label>",
+      "css": ".ds-search { display: grid; gap: 8px; color: var(--color-muted, #aeb7b5); font: 600 14px/1.4 'IBM Plex Sans', sans-serif; } .ds-search input { min-height: 48px; padding: 8px 0; border: 0; border-bottom: 2px solid var(--color-line, #303a3b); border-radius: 0; background: transparent; color: var(--color-paper, #f0eee7); font: 400 18px/1.5 'IBM Plex Sans', sans-serif; outline: none; transition: border-color 160ms ease-out; } .ds-search input:hover { border-color: var(--color-muted, #aeb7b5); } .ds-search input:focus { border-color: var(--color-accent, #e2b85b); }"
+    },
+    {
+      "name": "Status Label",
+      "kind": "chip",
+      "description": "Text-first state indicator with a redundant dot cue.",
+      "html": "<span class=\"ds-status\"><span aria-hidden=\"true\">●</span> JOB COMPLETE</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 8px; color: var(--color-success, #7fd0a1); font: 700 12px/1.25 'IBM Plex Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Benchmark Report Row",
+      "kind": "custom",
+      "refersTo": "report-row",
+      "description": "Evidence-first disclosure row with isolated score emphasis.",
+      "html": "<div class=\"ds-report-row\"><div><strong>2026-07-22__20-02-12</strong><p>Model: lmstudio/qwen · Trials: 1/1</p></div><div class=\"ds-score\"><span>TASKS PASSED</span><b>100%</b></div></div>",
+      "css": ".ds-report-row { display: grid; grid-template-columns: minmax(0, 1fr) 128px; gap: 24px; align-items: center; padding: 32px 16px; border-bottom: 1px solid var(--color-line, #303a3b); background: transparent; color: var(--color-paper, #f0eee7); } .ds-report-row > div > strong { font: 700 24px/1 'Barlow Condensed', sans-serif; text-transform: uppercase; } .ds-report-row p { margin: 10px 0 0; color: var(--color-muted, #aeb7b5); font: 400 14px/1.5 'IBM Plex Mono', monospace; } .ds-score { border-left: 2px solid var(--color-accent, #e2b85b); padding-left: 16px; } .ds-score span { display: block; color: var(--color-muted, #aeb7b5); font: 700 12px/1.25 'IBM Plex Sans', sans-serif; letter-spacing: .08em; } .ds-score b { display: block; margin-top: 4px; font: 700 36px/1 'Barlow Condensed', sans-serif; } .ds-report-row:hover { background: color-mix(in srgb, var(--color-surface, #121718) 60%, transparent); }"
+    },
+    {
+      "name": "Task Evidence Card",
+      "kind": "card",
+      "refersTo": "task-card",
+      "description": "Flat bordered container for trial evidence and source actions.",
+      "html": "<article class=\"ds-task-card\"><h3>ZENOBI-US/SSH-KEY-PAIR</h3><dl><div><dt>MODEL</dt><dd>lmstudio/qwen</dd></div><div><dt>REWARD</dt><dd>1</dd></div></dl></article>",
+      "css": ".ds-task-card { padding: 28px; border: 1px solid var(--color-line, #303a3b); border-radius: 0; background: var(--color-surface, #121718); color: var(--color-paper, #f0eee7); } .ds-task-card h3 { margin: 0 0 24px; font: 700 20px/1 'Barlow Condensed', sans-serif; text-transform: uppercase; } .ds-task-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; margin: 0; } .ds-task-card dt { color: var(--color-muted, #aeb7b5); font: 700 12px/1.25 'IBM Plex Sans', sans-serif; letter-spacing: .08em; } .ds-task-card dd { margin: 4px 0 0; font: 400 14px/1.5 'IBM Plex Mono', monospace; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Evidence Ledger",
+    "overview": "The interface behaves like a public record: claims appear first, supporting evidence remains directly inspectable, and every visual decision reinforces credibility. Its forensic editorial voice combines an oversized condensed headline with compact technical metadata, hard rules, and deliberate empty space. The system is quiet but not timid. Signal Amber creates one controlled point of emphasis; status colors communicate state without replacing explicit labels. Decoration is rejected unless it improves orientation or evidence reading.",
+    "keyCharacteristics": [
+      "Evidence-first hierarchy with one strong editorial focal point.",
+      "Flat, square-edged surfaces separated by rules and tonal shifts.",
+      "Condensed display typography paired with readable sans-serif body copy.",
+      "Monospace reserved for identifiers, measurements, dates, and source metadata.",
+      "Motion used only to orient readers during entry and disclosure."
+    ],
+    "rules": [
+      { "name": "The Signal Rarity Rule", "body": "Signal Amber should occupy a small minority of the page; its scarcity gives it authority.", "section": "colors" },
+      { "name": "The Explicit Status Rule", "body": "Color may reinforce state, but every state must remain understandable from text and shape alone.", "section": "colors" },
+      { "name": "The Evidence Mono Rule", "body": "Use monospace only when content is an identifier, path, timestamp, count, measurement, or raw value.", "section": "typography" },
+      { "name": "The Linear Archive Rule", "body": "Preserve one searchable chronological report stream; do not convert the archive into a card dashboard or aggregate leaderboard without new product evidence.", "section": "layout" },
+      { "name": "The Flat Evidence Rule", "body": "Borders and tonal layers carry structure; decorative shadows and glows do not belong.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do lead with job status, identity, score, model, and time before paths or raw metadata.",
+      "Do use hard rules, tonal shifts, and whitespace to separate evidence.",
+      "Do keep focus visible and status understandable without color.",
+      "Do use brief exponential entrance and disclosure motion only for orientation.",
+      "Do retain the asymmetric editorial header as the primary visual signature."
+    ],
+    "donts": [
+      "Don't add gradients, glass effects, neon accents, decorative charts, or generic dashboard cards.",
+      "Don't use Signal Amber as a large background field or routine body-text color.",
+      "Don't introduce rounded containers or shadows that imply floating surfaces.",
+      "Don't use monospace for ordinary prose or headings.",
+      "Don't let visual drama obscure provenance, failures, missing data, or keyboard access."
+    ]
+  }
+}
