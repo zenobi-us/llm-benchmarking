@@ -124,13 +124,13 @@ jobs/<job>/
 
 ## View benchmark reports
 
-The static viewer reads `jobs.jsonl`, then loads each indexed trial result and Pi session directly from `jobs/`. `PiLmStudio` appends an index record after every agent run.
+The static viewer reads `jobs.jsonl`, then loads each indexed job's `config.json` and aggregate `result.json` directly from `jobs/`. Harbor's `JobIndexPlugin` appends one record after all trials finish.
 
 ```bash
 python -m http.server
 ```
 
-Open <http://localhost:8000>. No build step or application server is required. Opening `index.html` through `file://` will not work because browsers block local `fetch()` calls.
+Open <http://localhost:8000>. No build step or application server is required. Tailwind v4 and the typefaces load from public CDNs, so the viewer needs network access. Opening `index.html` through `file://` will not work because browsers block local `fetch()` calls.
 
 ## Troubleshooting
 
@@ -165,10 +165,9 @@ harbor_agents/tests/          Python agent unit tests
 HARBOR_PI_LMSTUDIO.md         Agent configuration details
 benchmarks/ssh-key-pair/      Local Harbor benchmark task
 tests/                        Launcher tests
-index.html                    Static benchmark report viewer
-app.js                        Viewer behavior and onboarding states
-styles.css                    Viewer presentation
-jobs.jsonl                    Append-only trial index for the viewer
+index.html                    Viewer markup, Tailwind v4 theme, and browser runtime
+app.js                        Viewer behavior and Tailwind utility classes
+jobs.jsonl                    Append-only completed-job index for the viewer
 jobs/                         Generated benchmark runs
 ```
 

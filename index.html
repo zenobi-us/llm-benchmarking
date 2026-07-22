@@ -8,47 +8,122 @@
       name="description"
       content="Public reports for LLM benchmarks run with LM Studio."
     />
-    <title>LM Studio benchmark runs</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>LM Studio benchmark jobs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-ink: #0a0d0e;
+        --color-surface: #121718;
+        --color-surface-strong: #192021;
+        --color-line: #303a3b;
+        --color-paper: #f0eee7;
+        --color-muted: #aeb7b5;
+        --color-accent: #e2b85b;
+        --color-success: #7fd0a1;
+        --color-pending: #89bde2;
+        --color-danger: #ef9994;
+        --color-unavailable: #c8aaaa;
+        --font-display: "Barlow Condensed", sans-serif;
+        --font-sans: "IBM Plex Sans", sans-serif;
+        --font-mono: "IBM Plex Mono", monospace;
+        --animate-evidence-pulse: evidence-pulse 900ms cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+        --animate-rise: rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes evidence-pulse {
+        to { opacity: 0.9; }
+      }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(18px); }
+      }
+    </style>
     <script src="app.js" defer></script>
   </head>
-  <body>
-    <a class="skip-link" href="#runs">Skip to runs</a>
+  <body class="min-w-80 bg-ink font-sans text-paper antialiased selection:bg-accent selection:text-ink">
+    <a
+      class="fixed left-3 top-3 z-50 -translate-y-40 bg-paper px-3 py-2 font-semibold text-ink transition-transform focus:translate-y-0"
+      href="#jobs"
+    >Skip to jobs</a>
 
-    <header class="page-header shell">
-      <p class="kicker">LM Studio benchmark archive</p>
-      <h1>Benchmark runs</h1>
-      <p class="intro">Browse model results by task, score, and execution transcript.</p>
+    <header class="mx-auto grid w-[calc(100%-1.75rem)] max-w-[70rem] gap-12 border-b border-line py-[clamp(3.5rem,9vw,7.5rem)] md:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)] md:items-start md:gap-16 ">
+      <div class="motion-safe:animate-rise">
+        <p class="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-accent">Harbor benchmark archive</p>
+        <h1 class="max-w-3xl font-display text-7xl font-extrabold uppercase leading-[0.78] tracking-[-0.035em] text-balance sm:text-8xl">
+          Benchmark <span class="block text-accent">jobs</span>
+        </h1>
+      </div>
 
-      <details class="help">
-        <summary>How to read a run</summary>
-        <p>
-          Status distinguishes ready results, pending results, failed runs, and
-          unavailable data. Task score comes from automated checks; its scale depends
-          on the task. Open the transcript to inspect what the model did.
-        </p>
-      </details>
+      <div class="border-line motion-safe:animate-rise md:border-l md:pl-8 md:[animation-delay:120ms]">
+        <p class="mb-8 max-w-[34rem] text-lg leading-8 text-muted">Browse completed Harbor jobs by model, pass rate, environment, and status.</p>
+
+
+        <details class="group border-y border-line py-4 text-muted">
+          <summary class="flex w-fit cursor-pointer list-none items-center gap-3 font-semibold text-paper outline-none [&::-webkit-details-marker]:hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-ink">
+            How to read a job
+            <span class="help-toggle text-xl leading-none text-accent transition-transform duration-200 ease-out group-open:rotate-90" aria-hidden="true">›</span>
+          </summary>
+          <p class="mt-4 max-w-[65ch] leading-7">
+            Each row represents one Harbor job after all trials finish. Expand a row to
+            inspect its tasks, configuration, result metadata, and source JSON files.
+          </p>
+        </details>
+
+      </div>
     </header>
 
-    <main class="shell" id="runs">
-      <div class="toolbar">
-        <label class="search">
-          <span>Search runs</span>
+    <section class="mx-auto w-[calc(100%-1.75rem)] max-w-[70rem] border-b border-line py-10 md:py-14" aria-labelledby="pass-chart-title">
+      <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-accent">Aggregate evidence</p>
+          <h2 class="font-display text-4xl font-bold uppercase leading-none tracking-tight text-paper" id="pass-chart-title">Daily model pass rate</h2>
+        </div>
+        <p class="max-w-md text-sm leading-6 text-muted" id="pass-chart-summary">Loading completed benchmark evidence…</p>
+      </div>
+      <div class="relative" id="pass-chart">
+        <div class="overflow-x-auto pb-3" id="pass-chart-scroll" tabindex="0" aria-label="Scrollable daily model pass-rate chart"></div>
+        <div class="pointer-events-none absolute z-20 min-w-52 border border-line bg-surface-strong p-4 text-sm text-paper shadow-[12px_18px_40px_rgba(0,0,0,0.35)]" id="pass-chart-tooltip" role="tooltip" hidden></div>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2" id="pass-chart-legend" aria-label="Model legend"></div>
+    </section>
+
+    <main class="mx-auto w-[calc(100%-1.75rem)] max-w-[70rem] py-10 md:py-14" id="jobs">
+      <div class="mb-9 flex flex-col gap-4 border-b border-line pb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+        <label class="block w-full max-w-xl">
+          <span class="mb-2 flex items-center justify-between text-sm font-semibold text-muted">
+            <span>Search jobs</span>
+            <kbd class="border border-line px-2 py-0.5 font-mono text-xs font-medium text-muted" aria-hidden="true">/</kbd>
+          </span>
           <input
+            class="min-h-12 w-full border-0 border-b-2 border-line bg-transparent px-0 py-2 text-lg text-paper outline-none transition-colors placeholder:text-muted/70 hover:border-muted focus:border-accent focus-visible:ring-0"
             id="search"
             type="search"
-            placeholder="Task, model, or run ID"
+            placeholder="Task, model, or job ID"
             autocomplete="off"
+            aria-keyshortcuts="/"
           />
         </label>
-        <p class="run-count" id="run-count" aria-live="polite">Loading…</p>
+        <p class="mb-1 whitespace-nowrap font-mono text-sm tabular-nums text-muted" id="job-count" aria-live="polite">Loading…</p>
       </div>
 
-      <div class="data-warning" id="data-warning" role="status" hidden></div>
-      <div class="state" id="state" role="status" aria-live="polite">
-        Loading runs…
+      <div class="mb-6 border-y border-accent/40 py-3 text-accent" id="data-warning" role="status" hidden></div>
+      <div class="state min-h-48 border-t border-line py-14 text-left text-muted" id="state" role="status" aria-live="polite" aria-busy="true">
+        <div class="mx-auto w-full max-w-xl">
+          <p class="mb-5">Reading benchmark index…</p>
+          <div class="grid gap-2.5" aria-hidden="true">
+            <span class="h-2 w-full animate-evidence-pulse bg-surface-strong opacity-40"></span>
+            <span class="h-2 w-4/5 animate-evidence-pulse bg-surface-strong opacity-40 [animation-delay:100ms]"></span>
+            <span class="h-2 w-3/5 animate-evidence-pulse bg-surface-strong opacity-40 [animation-delay:200ms]"></span>
+          </div>
+        </div>
       </div>
-      <div class="run-list" id="run-list"></div>
+      <div class="border-t border-line" id="job-list"></div>
     </main>
   </body>
 </html>

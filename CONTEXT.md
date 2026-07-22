@@ -2,13 +2,13 @@
 
 This project runs Harbor benchmarks through Pi against models served locally by LM Studio. Benchmark artifacts live under `jobs/`.
 
-The planned report viewer is a simple static website. It reads `jobs.jsonl`, which is updated whenever `harbor_agents/pi_lmstudio.py` runs, and presents job/session results without requiring an application server.
+The report viewer is a simple static website. Harbor updates `jobs.jsonl` through `JobIndexPlugin` after every completed job, and the viewer loads each referenced job config and aggregate result without requiring an application server.
 
 ## Design Context
 
 ### Users
 
-Primary users are public benchmark readers, including people who did not run the benchmark and may not know Harbor, Pi, or the repository layout. They need to quickly understand what ran, which model and task were involved, whether the run succeeded, what score or outcome it produced, and where supporting session details can be inspected.
+Primary users are public benchmark readers, including people who did not run the benchmark and may not know Harbor, Pi, or the repository layout. They need to quickly understand what ran, which models and tasks were involved, whether the job succeeded, what aggregate score or outcome it produced, and where the source config and result can be inspected.
 
 The interface should support fast scanning first, then progressive inspection of an individual job report. Raw implementation and artifact-path details are secondary evidence, not the primary reading experience.
 
@@ -36,6 +36,6 @@ No existing brand assets, logos, fonts, color tokens, component library, or curr
 
 ### Interface Scope
 
-The viewer should remain a linear run archive, not become a dashboard. Each row needs only status, task, model, date, score, transcript, and raw result access. Search is the only persistent control.
+The viewer should remain a linear job archive, not become a dashboard. Each row needs only status, tasks, models, date, aggregate score, config access, and raw job-result access. Search is the only persistent control.
 
 Onboarding belongs in one native, optional disclosure. Aggregate metric panels, guided tours, status filters, manual refresh controls, nested fact cards, decorative source badges, and repeated footer explanations were removed because they delayed the primary task without adding necessary information. Reintroduce any of them only when observed usage shows a specific failure that the simpler interface cannot solve.
