@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shlex
+import socket
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -14,10 +15,19 @@ from harbor.models.agent.context import AgentContext
 from harbor.models.trial.paths import EnvironmentPaths
 
 
+def _discover_host_ip() -> str:
+    """Return the IPv4 address used by the host's default route."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+            connection.connect(("1.1.1.1", 80))
+            return str(connection.getsockname()[0])
+    except OSError as exc:
+        raise RuntimeError("Could not discover host IPv4 address") from exc
+
+
 class PiLmStudio(Pi):
     """Install Pi and inject an LM Studio custom-provider configuration."""
 
-    DEFAULT_BASE_URL = "http://192.168.86.35:1234/v1"
     DEFAULT_MODEL_ID = "google/gemma-4-26b-a4b-qat"
     _SESSION_FILENAME = "session.jsonl"
     _SESSION_HTML_FILENAME = "session.html"
@@ -26,7 +36,7 @@ class PiLmStudio(Pi):
     def __init__(
         self,
         *args: Any,
-        lmstudio_base_url: str = DEFAULT_BASE_URL,
+        lmstudio_base_url: str | None = None,
         lmstudio_model: str | None = None,
         lmstudio_api_key: str = "lm-studio",
         models_json_path: str | Path | None = None,
@@ -43,11 +53,6 @@ class PiLmStudio(Pi):
         if model_provider and model_provider != "lmstudio":
             raise ValueError("PiLmStudio requires an lmstudio/<model-id> model name")
 
-        self._lmstudio_base_url = lmstudio_base_url.rstrip("/")
-        self._lmstudio_model = (
-            lmstudio_model or (model_id if separator else None) or self.DEFAULT_MODEL_ID
-        )
-        self._lmstudio_api_key = lmstudio_api_key
         self._models_json_path = (
             Path(models_json_path).expanduser() if models_json_path else None
         )
@@ -63,6 +68,14 @@ class PiLmStudio(Pi):
                     f"Invalid Pi models config JSON: {self._models_json_path}"
                 ) from exc
 
+        self._lmstudio_base_url = (
+            lmstudio_base_url or f"http://{_discover_host_ip()}:1234/v1"
+        ).rstrip("/")
+        self._lmstudio_model = (
+            lmstudio_model or (model_id if separator else None) or self.DEFAULT_MODEL_ID
+        )
+        self._lmstudio_api_key = lmstudio_api_key
+
     @staticmethod
     def name() -> str:
         return "pi-lmstudio"
@@ -71,7 +84,16 @@ class PiLmStudio(Pi):
         await super().install(environment)
 
         if self._models_json_path:
-            models_json = self._models_json_path.read_text()
+            models_config = json.loads(self._models_json_path.read_text())
+            try:
+                models_config["providers"]["lmstudio"]["baseUrl"] = (
+                    self._lmstudio_base_url
+                )
+            except (KeyError, TypeError) as exc:
+                raise ValueError(
+                    "Pi models config must define providers.lmstudio"
+                ) from exc
+            models_json = json.dumps(models_config, indent=2)
         else:
             models_json = json.dumps(
                 {

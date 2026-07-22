@@ -7,14 +7,14 @@ This project-local Harbor agent subclasses Harbor's built-in `pi` integration. D
 - Harbor: `0.18.0`
 - Agent import: `harbor_agents.pi_lmstudio:PiLmStudio`
 - Provider: `lmstudio`
-- Endpoint: `http://192.168.86.35:1234/v1`
-- Model: selected from `harbor_agents/models/*.json`
+- Endpoint: `http://127.0.0.1:1234/v1`
+- Model: selected from LM Studio's `GET /v1/models` response
 
-The LAN address is intentional. `127.0.0.1` inside a Harbor task container refers to that container, not the LM Studio host. `brass.lan` may depend on mDNS that is unavailable in Docker.
+The wrapper gives Harbor's main container host networking, so the container reaches LM Studio through `127.0.0.1`.
 
 ## Run
 
-The wrapper requires `fzf` and `jq`. It opens an `fzf` picker for `harbor_agents/models/*.json`, then derives Harbor's model ID from the selected config.
+The wrapper requires `curl`, `fzf`, and `jq`. It queries LM Studio, opens an `fzf` picker for the returned model IDs, then writes a temporary Pi `models.json` for the selected model.
 
 ```bash
 ./run-pi-lmstudio.sh -p ./ssh-key-pair
@@ -26,7 +26,7 @@ For a registry dataset:
 ./run-pi-lmstudio.sh -d terminal-bench@2.0 -l 1
 ```
 
-The wrapper adds `192.168.86.35` to Harbor's agent-phase network allowlist.
+The generated config uses Pi's `openai-completions` provider format and is mounted through the existing `models_json_path` agent argument.
 
 ## Session export
 
@@ -44,18 +44,19 @@ Pi's `/export session.html` syntax is an interactive TUI command. Harbor runs Pi
 
 ## Override defaults
 
-By default, the agent derives the custom-provider model ID from Harbor's `--model` value. Pass a complete Pi provider config with `models_json_path`; this supports keeping model configs under `harbor_agents/models/*.json`:
+By default, the agent derives the custom-provider model ID from Harbor's `--model` value. You can still pass a complete Pi provider config with `models_json_path`:
 
 ```bash
 harbor run \
   -a harbor_agents.pi_lmstudio:PiLmStudio \
   -m lmstudio/google/gemma-4-26b-a4b-qat \
-  --allow-agent-host 192.168.86.35 \
-  --agent-kwarg models_json_path=harbor_agents/models/google--gemma-4-26b-a4b-qat.json \
+  --allow-agent-host <host-ip> \
+  --agent-kwarg models_json_path=/path/to/models.json \
+  --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
   -p ./ssh-key-pair
 ```
 
-The path is read by the host Harbor process. It must exist and contain valid JSON. When supplied, it replaces the generated `models.json`; `lmstudio_base_url`, `lmstudio_model`, and `lmstudio_api_key` only affect generated config.
+The path is read by the host Harbor process. It must exist and contain valid JSON. When supplied, its LM Studio `baseUrl` is replaced with `lmstudio_base_url`; model and API-key overrides only affect generated config.
 
 Harbor passes generated-config endpoint or API-key overrides with `--agent-kwarg`:
 
@@ -63,8 +64,8 @@ Harbor passes generated-config endpoint or API-key overrides with `--agent-kwarg
 harbor run \
   -a harbor_agents.pi_lmstudio:PiLmStudio \
   -m lmstudio/google/gemma-4-26b-a4b-qat \
-  --allow-agent-host 192.168.86.35 \
-  --agent-kwarg lmstudio_base_url=http://192.168.86.35:1234/v1 \
+  --allow-agent-host <host-ip> \
+  --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
   -p ./ssh-key-pair
 ```
 
@@ -73,7 +74,7 @@ Run from this repository, or add its root to `PYTHONPATH`, so Harbor can import 
 ## Verify LM Studio
 
 ```bash
-curl -fsS http://192.168.86.35:1234/v1/models
+curl -fsS http://127.0.0.1:1234/v1/models
 ```
 
 The configured model ID must exactly match an ID returned by that endpoint.

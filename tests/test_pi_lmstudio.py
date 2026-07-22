@@ -1,12 +1,11 @@
-import shlex
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from harbor.agents.installed.pi import Pi
 
-from harbor_agents.pi_lmstudio import PiLmStudio
+from harbor_agents.pi_lmstudio import PiLmStudio, _discover_host_ip
 
 
 class PiLmStudioModelsConfigTest(unittest.IsolatedAsyncioTestCase):
@@ -14,12 +13,14 @@ class PiLmStudioModelsConfigTest(unittest.IsolatedAsyncioTestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = root / "models.json"
-            models_json = '{"providers":{"lmstudio":{"models":[]}}}'
-            config.write_text(models_json)
+            config.write_text(
+                '{"providers":{"lmstudio":{"baseUrl":"http://stale:1234/v1","models":[]}}}'
+            )
             agent = PiLmStudio(
                 logs_dir=root,
                 model_name="lmstudio/test-model",
                 models_json_path=config,
+                lmstudio_base_url="http://10.0.0.5:1234/v1",
             )
 
             with (
@@ -29,8 +30,18 @@ class PiLmStudioModelsConfigTest(unittest.IsolatedAsyncioTestCase):
                 await agent.install(object())
 
             command = execute.await_args.kwargs["command"]
-            self.assertIn(shlex.quote(models_json), command)
+            self.assertIn('"baseUrl": "http://10.0.0.5:1234/v1"', command)
             self.assertIn('> "$HOME/.pi/agent/models.json"', command)
+
+    def test_discovers_default_route_ip(self) -> None:
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.getsockname.return_value = ("10.0.0.5", 54321)
+
+        with patch("harbor_agents.pi_lmstudio.socket.socket", return_value=connection):
+            self.assertEqual(_discover_host_ip(), "10.0.0.5")
+
+        connection.connect.assert_called_once_with(("1.1.1.1", 80))
 
     def test_rejects_missing_models_json(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
