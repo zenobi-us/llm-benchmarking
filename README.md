@@ -127,10 +127,10 @@ jobs/<job>/
 The static viewer reads `jobs.jsonl`, then loads each indexed job's `config.json` and aggregate `result.json` directly from `jobs/`. Harbor's `JobIndexPlugin` appends one record after all trials finish.
 
 ```bash
-python -m http.server
+mise run dev
 ```
 
-Open <http://localhost:8000>. No build step or application server is required. Tailwind v4 and the typefaces load from public CDNs, so the viewer needs network access. Opening `index.html` through `file://` will not work because browsers block local `fetch()` calls.
+Open <http://localhost:3000/llm-benchmarking/>. The development server uses the same base path as GitHub Pages. No build step or application server is required. Tailwind v4 and the typefaces load from public CDNs, so the viewer needs network access. Opening `index.html` through `file://` will not work because browsers block local `fetch()` calls.
 
 ## Troubleshooting
 
