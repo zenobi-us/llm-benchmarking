@@ -61,8 +61,10 @@ If the final command returns no model IDs, load a model in LM Studio before cont
 ```bash
 ./run-pi-lmstudio.sh \
   --job-name ssh-key-smoke \
-  -p ./tests/ssh-key-pair
+  -p ./benchmarks/ssh-key-pair
 ```
+
+With no Harbor arguments, the launcher runs `benchmarks/ssh-key-pair`.
 
 Select a model in the `fzf` prompt. The launcher then:
 
@@ -156,16 +158,18 @@ Docker or task setup failures
 ## Repository map
 
 ```text
-run-pi-lmstudio.sh          Model picker and Harbor launcher
-harbor_agents/pi_lmstudio.py  Custom Harbor Pi agent
-HARBOR_PI_LMSTUDIO.md       Agent configuration details
-tests/ssh-key-pair/         Local end-to-end benchmark task
-tests/                      Launcher and agent tests
-index.html                  Static benchmark report viewer
-app.js                      Viewer behavior and onboarding states
-styles.css                  Viewer presentation
-jobs.jsonl                  Append-only trial index for the viewer
-jobs/                       Generated benchmark runs
+run-pi-lmstudio.sh            Model picker and Harbor launcher
+harbor_agents/pi_lmstudio.py  Stable Pi + LM Studio composition
+harbor_agents/base/           Reusable lifecycle, provider, and harness bases
+harbor_agents/tests/          Python agent unit tests
+HARBOR_PI_LMSTUDIO.md         Agent configuration details
+benchmarks/ssh-key-pair/      Local Harbor benchmark task
+tests/                        Launcher tests
+index.html                    Static benchmark report viewer
+app.js                        Viewer behavior and onboarding states
+styles.css                    Viewer presentation
+jobs.jsonl                    Append-only trial index for the viewer
+jobs/                         Generated benchmark runs
 ```
 
 See [HARBOR_PI_LMSTUDIO.md](HARBOR_PI_LMSTUDIO.md) for manual agent configuration and session export details.

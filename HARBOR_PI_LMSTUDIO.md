@@ -1,6 +1,21 @@
 # Harbor Pi agent using LM Studio
 
-This project-local Harbor agent subclasses Harbor's built-in `pi` integration. During agent setup it installs Pi and writes the LM Studio provider to the task container's `$HOME/.pi/agent/models.json`.
+This project-local Harbor agent composes reusable lifecycle, provider, and harness bases. During agent setup the Pi harness installs Pi, then translates the harness-neutral LM Studio provider declaration into `$HOME/.pi/agent/models.json` inside the task container.
+
+## Extension architecture
+
+`harbor_agents.pi_lmstudio:PiLmStudio` remains the stable Harbor import path, but its implementation is deliberately small:
+
+```python
+class PiLmStudio(AgentBase, LmStudioAgentProvider, PiMonoAgentBase):
+    ...
+```
+
+- `AgentBase` appends `jobs.jsonl` after every run, including failures.
+- `LmStudioAgentProvider` declares connection details without knowing Pi's config format.
+- `PiMonoAgentBase` installs and runs Pi, translates provider declarations, and exports session HTML.
+
+The base order is part of the lifecycle contract. See [`harbor_agents/base/README.md`](harbor_agents/base/README.md) before adding a provider, harness, or concrete combination.
 
 ## Configuration
 
@@ -17,8 +32,10 @@ The wrapper gives Harbor's main container host networking, so the container reac
 The wrapper requires `curl`, `fzf`, and `jq`. It queries LM Studio, opens an `fzf` picker for the returned model IDs, then writes a temporary Pi `models.json` for the selected model.
 
 ```bash
-./run-pi-lmstudio.sh -p ./ssh-key-pair
+./run-pi-lmstudio.sh -p ./benchmarks/ssh-key-pair
 ```
+
+With no Harbor arguments, the launcher uses `benchmarks/ssh-key-pair`.
 
 For a registry dataset:
 
@@ -53,7 +70,7 @@ harbor run \
   --allow-agent-host <host-ip> \
   --agent-kwarg models_json_path=/path/to/models.json \
   --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
-  -p ./ssh-key-pair
+  -p ./benchmarks/ssh-key-pair
 ```
 
 The path is read by the host Harbor process. It must exist and contain valid JSON. When supplied, its LM Studio `baseUrl` is replaced with `lmstudio_base_url`; model and API-key overrides only affect generated config.
@@ -66,7 +83,7 @@ harbor run \
   -m lmstudio/google/gemma-4-26b-a4b-qat \
   --allow-agent-host <host-ip> \
   --agent-kwarg lmstudio_base_url=http://<host-ip>:1234/v1 \
-  -p ./ssh-key-pair
+  -p ./benchmarks/ssh-key-pair
 ```
 
 Run from this repository, or add its root to `PYTHONPATH`, so Harbor can import the custom agent module.
