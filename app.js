@@ -1,23 +1,14 @@
 const INDEX_URL = "jobs.jsonl";
-const GUIDE_KEY = "benchmark-report-guide-dismissed-v1";
 
 const elements = {
-  guide: document.querySelector("#guide"),
-  dismissGuide: document.querySelector("#dismiss-guide"),
-  showGuide: document.querySelector("#show-guide"),
-  refresh: document.querySelector("#refresh"),
   search: document.querySelector("#search"),
-  statusFilter: document.querySelector("#status-filter"),
+  count: document.querySelector("#run-count"),
   warning: document.querySelector("#data-warning"),
   state: document.querySelector("#state"),
-  list: document.querySelector("#report-list"),
-  total: document.querySelector("#total-count"),
-  completed: document.querySelector("#completed-count"),
-  running: document.querySelector("#running-count"),
-  averageReward: document.querySelector("#average-reward"),
+  list: document.querySelector("#run-list"),
 };
 
-let reports = [];
+let runs = [];
 let invalidLineCount = 0;
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -29,32 +20,11 @@ const numberFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 3,
 });
 
-function createElement(tag, className, text) {
+function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-function safeStorageGet(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeStorageSet(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Storage can be disabled. Dismissal still works for this page view.
-  }
-}
-
-function setGuideVisible(visible) {
-  elements.guide.hidden = !visible;
-  if (visible) elements.guide.querySelector("h2")?.focus?.();
 }
 
 function parseIndex(text) {
@@ -87,15 +57,14 @@ async function loadResult(record) {
     if (response.status === 404) {
       const recordedAt = new Date(record.recordedAt).getTime();
       // ponytail: fresh missing results are pending; add explicit final-state events if verifiers can exceed one hour.
-      const recentlyRecorded =
-        Number.isFinite(recordedAt) && Date.now() - recordedAt < 3_600_000;
+      const pending = Number.isFinite(recordedAt) && Date.now() - recordedAt < 3_600_000;
       return {
         ...record,
         result: null,
-        resultState: recentlyRecorded ? "pending" : "unavailable",
-        resultMessage: recentlyRecorded
-          ? "The benchmark is still writing its final result."
-          : "The final result file was not found.",
+        resultState: pending ? "pending" : "unavailable",
+        resultMessage: pending
+          ? "Final result is still being written."
+          : "Final result file was not found.",
       };
     }
     if (!response.ok) {
@@ -103,7 +72,7 @@ async function loadResult(record) {
         ...record,
         result: null,
         resultState: "unavailable",
-        resultMessage: `The result file could not be loaded (${response.status}).`,
+        resultMessage: `Result file could not be loaded (${response.status}).`,
       };
     }
     try {
@@ -113,7 +82,7 @@ async function loadResult(record) {
         ...record,
         result: null,
         resultState: "unavailable",
-        resultMessage: "The result file is not valid JSON.",
+        resultMessage: "Result file is not valid JSON.",
       };
     }
   } catch {
@@ -121,259 +90,191 @@ async function loadResult(record) {
       ...record,
       result: null,
       resultState: "unavailable",
-      resultMessage: "The result file could not be reached.",
+      resultMessage: "Result file could not be reached.",
     };
   }
 }
 
-function getStatus(report) {
-  if (report.result?.exception_info) return "error";
-  if (report.result) return "completed";
-  return report.resultState || "unavailable";
+function statusOf(run) {
+  if (run.result?.exception_info) return "error";
+  if (run.result) return "completed";
+  return run.resultState || "unavailable";
 }
 
-function getReward(report) {
-  const rewards = report.result?.verifier_result?.rewards;
+function scoreOf(run) {
+  const rewards = run.result?.verifier_result?.rewards;
   if (!rewards || typeof rewards !== "object") return null;
-  const reward = rewards.reward ?? Object.values(rewards).find(value => typeof value === "number");
-  return typeof reward === "number" ? reward : null;
+  const score = rewards.reward ?? Object.values(rewards).find(value => typeof value === "number");
+  return typeof score === "number" ? score : null;
 }
 
-function getTask(report) {
-  return report.result?.task_name || report.task || report.trial || "Unknown task";
+function taskOf(run) {
+  return run.result?.task_name || run.task || run.trial || "Unknown task";
 }
 
-function getModel(report) {
-  const info = report.result?.agent_info?.model_info;
-  if (info?.provider && info?.name) return `${info.provider}/${info.name}`;
-  return report.model || "Unknown model";
+function modelOf(run) {
+  const model = run.result?.agent_info?.model_info;
+  if (model?.provider && model?.name) return `${model.provider}/${model.name}`;
+  return run.model || "Unknown model";
 }
 
-function formatTitle(value) {
+function titleOf(value) {
   const lastPart = String(value).split("/").at(-1) || String(value);
   return lastPart.replace(/__[A-Za-z0-9]+$/, "").replaceAll("-", " ");
 }
 
-function formatDate(value) {
-  if (!value) return "Not recorded";
+function dateOf(run) {
+  const value = run.result?.finished_at || run.result?.started_at || run.recordedAt;
+  if (!value) return "Date unavailable";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Not recorded" : dateFormatter.format(date);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : dateFormatter.format(date);
 }
 
-function formatDuration(start, finish) {
-  if (!start || !finish) return "—";
-  const milliseconds = new Date(finish) - new Date(start);
-  if (!Number.isFinite(milliseconds) || milliseconds < 0) return "—";
-  const seconds = Math.round(milliseconds / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ${seconds % 60}s`;
-}
-
-function formatTokens(report) {
-  const input = report.result?.agent_result?.n_input_tokens;
-  const output = report.result?.agent_result?.n_output_tokens;
-  if (typeof input !== "number" && typeof output !== "number") return "—";
-  return numberFormatter.format((input || 0) + (output || 0));
-}
-
-function setState(kind, title, message, action) {
-  elements.state.replaceChildren();
-  const content = createElement("div", "state-content");
-  content.append(createElement("span", "state-icon", kind === "error" ? "!" : "◇"));
-  content.append(createElement("h3", "", title));
-  content.append(createElement("p", "", message));
+function showState(title, message, action) {
+  const content = element("div");
+  content.append(element("h2", "", title), element("p", "", message));
   if (action) {
-    const button = createElement("button", "button secondary", action.label);
+    const button = element("button", "", action.label);
     button.type = "button";
-    button.addEventListener("click", action.onClick);
+    button.addEventListener("click", action.run);
     content.append(button);
   }
-  elements.state.append(content);
+  elements.state.replaceChildren(content);
   elements.state.hidden = false;
 }
 
-function createFact(label, value) {
-  const fact = createElement("div", "fact");
-  fact.append(createElement("span", "", label));
-  fact.append(createElement("strong", "", value));
-  return fact;
-}
-
-function createLink(label, href, available = true) {
-  const link = createElement("a", `action-link${available ? "" : " disabled"}`);
-  link.append(createElement("span", "", label));
-  link.append(createElement("span", "", available ? "↗" : "—"));
+function link(label, href, available, secondary = false) {
+  const anchor = element("a", secondary ? "secondary" : "", label);
   if (available) {
-    link.href = href;
-    link.target = "_blank";
-    link.rel = "noreferrer";
+    anchor.href = href;
+    anchor.target = "_blank";
+    anchor.rel = "noreferrer";
   } else {
-    link.setAttribute("aria-disabled", "true");
+    anchor.setAttribute("aria-disabled", "true");
   }
-  return link;
+  return anchor;
 }
 
-function createReportCard(report) {
-  const status = getStatus(report);
-  const reward = getReward(report);
-  const result = report.result;
-  const article = createElement("article", "report-card");
+function runRow(run) {
+  const status = statusOf(run);
+  const score = scoreOf(run);
+  const article = element("article", "run");
 
-  const body = createElement("div");
-  const titleRow = createElement("div", "report-title-row");
-  const badgeLabel = status === "unavailable" ? "Unavailable" : status;
-  titleRow.append(createElement("span", `status ${status}`, badgeLabel));
-  titleRow.append(createElement("h3", "", formatTitle(getTask(report))));
-  body.append(titleRow);
-
-  const context = createElement("p", "report-context mono");
-  context.append(createElement("span", "", getModel(report)));
-  context.append(createElement("span", "", report.job || "Unknown job"));
-  context.append(
-    createElement("span", "", formatDate(result?.finished_at || result?.started_at || report.recordedAt)),
+  const description = element("div");
+  const heading = element("div", "run-heading");
+  heading.append(
+    element("span", `status ${status}`, status),
+    element("h2", "", titleOf(taskOf(run))),
   );
-  body.append(context);
 
-  const facts = createElement("div", "report-facts");
-  facts.append(createFact("Score", reward === null ? "—" : numberFormatter.format(reward)));
-  facts.append(createFact("Duration", formatDuration(result?.started_at, result?.finished_at)));
-  facts.append(createFact("Tokens", formatTokens(report)));
-  body.append(facts);
-  article.append(body);
+  const meta = element("p", "meta");
+  meta.append(
+    element("span", "", modelOf(run)),
+    element("span", "", dateOf(run)),
+    element("span", "", run.job || "Job unavailable"),
+  );
+  description.append(heading, meta);
 
-  const actions = createElement("div", "report-actions");
+  const scoreBlock = element("div", "score");
+  scoreBlock.append(
+    element("span", "", "Score"),
+    element("strong", "", score === null ? "—" : numberFormatter.format(score)),
+  );
+
+  const actions = element("div", "actions");
   actions.append(
-    createLink(
-      "View model transcript",
-      report.sessionPath,
-      Boolean(report.sessionPath) && report.sessionAvailable !== false,
+    link(
+      "View transcript",
+      run.sessionPath,
+      Boolean(run.sessionPath) && run.sessionAvailable !== false,
     ),
+    link("Raw result", run.resultPath, Boolean(run.result), true),
   );
-  actions.append(createLink("View raw result data", report.resultPath, Boolean(result)));
-  if (!result) {
-    actions.append(
-      createElement("p", "data-note", report.resultMessage || "Result unavailable."),
-    );
-  }
-  article.append(actions);
 
+  article.append(description, scoreBlock, actions);
+  if (!run.result) article.append(element("p", "result-note", run.resultMessage || "Result unavailable."));
   return article;
-}
-
-function updateSummary() {
-  const completed = reports.filter(report => getStatus(report) === "completed").length;
-  const pending = reports.filter(report => getStatus(report) === "pending").length;
-  const rewards = reports.map(getReward).filter(value => value !== null);
-  const average = rewards.length
-    ? rewards.reduce((sum, value) => sum + value, 0) / rewards.length
-    : null;
-
-  elements.total.textContent = numberFormatter.format(reports.length);
-  elements.completed.textContent = numberFormatter.format(completed);
-  elements.running.textContent = numberFormatter.format(pending);
-  elements.averageReward.textContent = average === null ? "—" : numberFormatter.format(average);
 }
 
 function render() {
   const query = elements.search.value.trim().toLowerCase();
-  const statusFilter = elements.statusFilter.value;
-  const visible = reports.filter(report => {
-    const matchesQuery = !query || [getTask(report), getModel(report), report.job, report.trial]
+  const visible = runs.filter(run =>
+    !query || [taskOf(run), modelOf(run), run.job, run.trial]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
-      .includes(query);
-    const matchesStatus = statusFilter === "all" || getStatus(report) === statusFilter;
-    return matchesQuery && matchesStatus;
-  });
+      .includes(query),
+  );
 
-  elements.list.replaceChildren(...visible.map(createReportCard));
+  const count = runs.length === visible.length
+    ? `${runs.length} ${runs.length === 1 ? "run" : "runs"}`
+    : `${visible.length} of ${runs.length} runs`;
+  elements.count.textContent = count;
+  elements.list.replaceChildren(...visible.map(runRow));
+
   if (visible.length) {
     elements.state.hidden = true;
     return;
   }
 
-  if (reports.length) {
-    setState("empty", "No runs match these filters.", "Clear the search or choose another status.", {
-      label: "Clear filters",
-      onClick: () => {
+  if (runs.length) {
+    showState("No matching runs", "Try another task, model, or job.", {
+      label: "Clear search",
+      run: () => {
         elements.search.value = "";
-        elements.statusFilter.value = "all";
         render();
+        elements.search.focus();
       },
     });
+  } else if (invalidLineCount) {
+    showState(
+      "Run index is unreadable",
+      "Ask the site owner to regenerate jobs.jsonl.",
+    );
   } else {
-    if (invalidLineCount) {
-      setState(
-        "error",
-        "The report index could not be read.",
-        "No valid runs were found. Ask the site owner to regenerate jobs.jsonl.",
-      );
-    } else {
-      setState(
-        "empty",
-        "No benchmark reports have been published yet.",
-        "New reports appear here after a benchmark finishes.",
-      );
-    }
+    showState("No runs published", "New runs appear here after a benchmark finishes.");
   }
 }
 
-async function loadReports() {
-  elements.refresh.disabled = true;
-  elements.warning.hidden = true;
-  elements.state.hidden = false;
-  elements.state.replaceChildren(createElement("span", "spinner"), "Loading benchmark reports…");
+async function loadRuns(showLoading = true) {
+  if (showLoading) {
+    elements.state.hidden = false;
+    elements.state.textContent = "Loading runs…";
+  }
 
   try {
     const response = await fetch(`${INDEX_URL}?t=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`jobs.jsonl returned ${response.status}`);
+    if (!response.ok) throw new Error("Index unavailable");
     const records = parseIndex(await response.text());
-    reports = await Promise.all(records.map(loadResult));
-    reports.sort((left, right) => {
+    runs = await Promise.all(records.map(loadResult));
+    runs.sort((left, right) => {
       const leftDate = left.result?.finished_at || left.recordedAt || "";
       const rightDate = right.result?.finished_at || right.recordedAt || "";
       return rightDate.localeCompare(leftDate);
     });
-    updateSummary();
     elements.warning.hidden = invalidLineCount === 0;
     elements.warning.textContent = invalidLineCount
-      ? `${invalidLineCount} unreadable report ${invalidLineCount === 1 ? "entry was" : "entries were"} skipped.`
+      ? `${invalidLineCount} unreadable ${invalidLineCount === 1 ? "entry was" : "entries were"} skipped.`
       : "";
     render();
   } catch {
-    reports = [];
-    updateSummary();
-    const fileHint = location.protocol === "file:"
-      ? "Open this site through a local web server. Run `python -m http.server`, then open the address it prints."
-      : "Ask the site owner to check that jobs.jsonl exists beside index.html.";
-    setState("error", "Could not load report data.", fileHint, {
-      label: "Retry",
-      onClick: loadReports,
+    if (runs.length) {
+      elements.warning.hidden = false;
+      elements.warning.textContent = "Could not refresh. Showing the last loaded runs.";
+      return;
+    }
+    elements.count.textContent = "0 runs";
+    const message = location.protocol === "file:"
+      ? "Run `python -m http.server`, then open the address it prints."
+      : "Ask the site owner to check jobs.jsonl.";
+    showState("Could not load runs", message, {
+      label: "Try again",
+      run: () => loadRuns(),
     });
-  } finally {
-    elements.refresh.disabled = false;
   }
 }
 
-if (safeStorageGet(GUIDE_KEY) === "true") setGuideVisible(false);
-
-elements.dismissGuide.addEventListener("click", () => {
-  safeStorageSet(GUIDE_KEY, "true");
-  setGuideVisible(false);
-  elements.showGuide.focus();
-});
-
-elements.showGuide.addEventListener("click", () => {
-  safeStorageSet(GUIDE_KEY, "false");
-  setGuideVisible(true);
-  elements.guide.scrollIntoView({ block: "start" });
-});
-
-elements.refresh.addEventListener("click", loadReports);
 elements.search.addEventListener("input", render);
-elements.statusFilter.addEventListener("change", render);
 
-loadReports();
-setInterval(loadReports, 30_000);
+loadRuns();
+setInterval(() => loadRuns(false), 30_000);

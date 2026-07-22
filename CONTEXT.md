@@ -33,3 +33,9 @@ No existing brand assets, logos, fonts, color tokens, component library, or curr
 3. **Optimize for unfamiliar readers.** Use plain labels and enough context to understand a benchmark without repository knowledge.
 4. **Stay visually quiet.** Use strong hierarchy, restrained color, compact metadata, and no decoration without informational value.
 5. **Keep the static experience robust.** Render useful empty, loading, malformed-data, and partial-job states; provide semantic HTML, keyboard access, visible focus, strong contrast, non-color status cues, and reduced-motion-safe behavior.
+
+### Interface Scope
+
+The viewer should remain a linear run archive, not become a dashboard. Each row needs only status, task, model, date, score, transcript, and raw result access. Search is the only persistent control.
+
+Onboarding belongs in one native, optional disclosure. Aggregate metric panels, guided tours, status filters, manual refresh controls, nested fact cards, decorative source badges, and repeated footer explanations were removed because they delayed the primary task without adding necessary information. Reintroduce any of them only when observed usage shows a specific failure that the simpler interface cannot solve.
