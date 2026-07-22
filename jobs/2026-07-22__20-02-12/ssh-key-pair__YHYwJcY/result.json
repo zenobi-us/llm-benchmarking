@@ -1,0 +1,116 @@
+{
+    "id": "65ba8223-c0b2-42eb-947a-94cb3a719c1d",
+    "task_name": "zenobi-us/ssh-key-pair",
+    "trial_name": "ssh-key-pair__YHYwJcY",
+    "trial_uri": "file:///home/zenobius/Projects/llm-benchmarking/jobs/2026-07-22__20-02-12/ssh-key-pair__YHYwJcY",
+    "task_id": {
+        "path": "tests/ssh-key-pair"
+    },
+    "source": null,
+    "task_checksum": "35a92d76d23f34efc4edf7290596dce585180dde25d9bd7ecf71a75b39d06aa8",
+    "config": {
+        "task": {
+            "path": "tests/ssh-key-pair",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "ssh-key-pair__YHYwJcY",
+        "trials_dir": "jobs/2026-07-22__20-02-12",
+        "install_only": false,
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "harbor_agents.pi_lmstudio:PiLmStudio",
+            "import_path": null,
+            "model_name": "lmstudio/qwen/qwen3.6-35b-a3b@q4_k_m",
+            "n_concurrent": null,
+            "concurrency_group": null,
+            "skills": [],
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "extra_allowed_hosts": [],
+            "kwargs": {
+                "models_json_path": "/tmp/pi-lmstudio.bLD0Ns/models.json",
+                "lmstudio_base_url": "http://127.0.0.1:1234/v1"
+            },
+            "mcp_servers": []
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "cpu_enforcement_policy": "auto",
+            "memory_enforcement_policy": "auto",
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "override_tpu": null,
+            "mounts": null,
+            "extra_docker_compose": [
+                "/tmp/pi-lmstudio.bLD0Ns/host-network.yaml"
+            ],
+            "kwargs": {},
+            "extra_allowed_hosts": []
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "disable": false
+        },
+        "artifacts": [],
+        "extra_instruction_paths": [],
+        "job_id": "2dc03624-9a0e-427d-8778-601e34253a0c"
+    },
+    "agent_info": {
+        "name": "pi-lmstudio",
+        "version": "0.73.1",
+        "model_info": {
+            "name": "qwen/qwen3.6-35b-a3b@q4_k_m",
+            "provider": "lmstudio"
+        }
+    },
+    "agent_result": {
+        "n_input_tokens": 3419,
+        "n_cache_tokens": 0,
+        "n_output_tokens": 161,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 1.0
+        }
+    },
+    "exception_info": null,
+    "started_at": "2026-07-22T10:32:12.388765Z",
+    "finished_at": "2026-07-22T10:35:39.088252Z",
+    "environment_setup": {
+        "started_at": "2026-07-22T10:32:12.416760Z",
+        "finished_at": "2026-07-22T10:32:16.072090Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-07-22T10:32:16.072203Z",
+        "finished_at": "2026-07-22T10:33:27.569809Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-07-22T10:33:27.570738Z",
+        "finished_at": "2026-07-22T10:35:15.494128Z"
+    },
+    "verifier": {
+        "started_at": "2026-07-22T10:35:16.033179Z",
+        "finished_at": "2026-07-22T10:35:26.248595Z"
+    },
+    "step_results": null
+}

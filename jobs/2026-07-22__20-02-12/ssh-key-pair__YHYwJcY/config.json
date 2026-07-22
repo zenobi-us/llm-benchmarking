@@ -1,0 +1,22 @@
+{
+    "task": {
+        "path": "tests/ssh-key-pair"
+    },
+    "trial_name": "ssh-key-pair__YHYwJcY",
+    "trials_dir": "jobs/2026-07-22__20-02-12",
+    "agent": {
+        "name": "harbor_agents.pi_lmstudio:PiLmStudio",
+        "model_name": "lmstudio/qwen/qwen3.6-35b-a3b@q4_k_m",
+        "kwargs": {
+            "models_json_path": "/tmp/pi-lmstudio.bLD0Ns/models.json",
+            "lmstudio_base_url": "http://127.0.0.1:1234/v1"
+        }
+    },
+    "environment": {
+        "type": "docker",
+        "extra_docker_compose": [
+            "/tmp/pi-lmstudio.bLD0Ns/host-network.yaml"
+        ]
+    },
+    "job_id": "2dc03624-9a0e-427d-8778-601e34253a0c"
+}
