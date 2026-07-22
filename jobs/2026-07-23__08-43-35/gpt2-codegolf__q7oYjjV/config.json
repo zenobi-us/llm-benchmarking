@@ -1,0 +1,25 @@
+{
+    "task": {
+        "path": "gpt2-codegolf",
+        "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+        "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+        "source": "terminal-bench"
+    },
+    "trial_name": "gpt2-codegolf__q7oYjjV",
+    "trials_dir": "jobs/2026-07-23__08-43-35",
+    "agent": {
+        "name": "harbor_agents.pi_lmstudio:PiLmStudio",
+        "model_name": "lmstudio/qwen/qwen3.6-35b-a3b@q4_k_m",
+        "kwargs": {
+            "models_json_path": "/tmp/pi-lmstudio.VzAr1m/models.json",
+            "lmstudio_base_url": "http://127.0.0.1:1234/v1"
+        }
+    },
+    "environment": {
+        "type": "docker",
+        "extra_docker_compose": [
+            "/tmp/pi-lmstudio.VzAr1m/host-network.yaml"
+        ]
+    },
+    "job_id": "9f985831-dc6f-4c78-899c-e502cbc12c6f"
+}

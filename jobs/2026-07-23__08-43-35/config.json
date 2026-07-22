@@ -1,0 +1,27 @@
+{
+    "job_name": "2026-07-23__08-43-35",
+    "n_concurrent_trials": 1,
+    "environment": {
+        "type": "docker",
+        "extra_docker_compose": [
+            "/tmp/pi-lmstudio.VzAr1m/host-network.yaml"
+        ]
+    },
+    "agents": [
+        {
+            "name": "harbor_agents.pi_lmstudio:PiLmStudio",
+            "model_name": "lmstudio/qwen/qwen3.6-35b-a3b@q4_k_m",
+            "kwargs": {
+                "models_json_path": "/tmp/pi-lmstudio.VzAr1m/models.json",
+                "lmstudio_base_url": "http://127.0.0.1:1234/v1"
+            }
+        }
+    ],
+    "datasets": [
+        {
+            "name": "terminal-bench",
+            "version": "2.0",
+            "n_tasks": 1
+        }
+    ]
+}

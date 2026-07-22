@@ -2,6 +2,15 @@
 
 This project runs Harbor benchmarks through Pi against models served locally by LM Studio. Benchmark artifacts live under `jobs/`.
 
+## Language
+
+**Launcher**:
+The repository-local command that discovers and selects an Agent module, then delegates benchmark execution to Harbor. All remaining arguments pass through unchanged; provider and benchmark setup are outside the Launcher.
+_Avoid_: Runner
+
+**Agent module**:
+A Python module under `harbor_agents/agents/` that exports its Harbor-compatible class as `Agent`. Its filename stem is the Launcher selection key.
+
 The report viewer is a simple static website. Harbor updates `jobs.jsonl` through `JobIndexPlugin` after every completed job, and the viewer loads each referenced job config and aggregate result without requiring an application server.
 
 ## Design Context
